@@ -1,0 +1,71 @@
+---
+roles:
+
+  puppet_master:
+    provisioners:
+      - type: shell
+        inline: "echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+      - type: pe_bootstrap
+        role: :master
+        answer_extras:
+          - '"puppet_enterprise::profile::master::r10k_remote": "ssh://git@github.com/petems/pe-jmx-metrics-vagrant-stack"'
+          - '"puppet_enterprise::profile::master::r10k_private_key": "/etc/puppetlabs/puppetserver/ssh/id-control_repo.rsa"'
+          - '"puppet_enterprise::profile::master::code_manager_auto_configure": true'
+
+  get_modules:
+    provisioners:
+      - type: shell
+        inline: "r10k puppetfile install --puppetfile /vagrant/Puppetfile --moduledir /etc/puppetlabs/code-staging/modules -v"
+      - type: shell
+        inline: "/bin/chown -R pe-puppet:pe-puppet /etc/puppetlabs/code-staging"
+
+  setup_control_repo:
+    provisioners:
+      - type: shell
+        inline: "mkdir -p /etc/puppetlabs/code-staging/environments/production"
+      - type: shell
+        inline: "yes | cp /vagrant/environment.conf /etc/puppetlabs/code-staging/environments/production/environment.conf"
+      - type: shell
+        inline: "yes | cp -r /vagrant/manifests /etc/puppetlabs/code-staging/environments/production/"
+      - type: shell
+        inline: "yes | cp -r /vagrant/site /etc/puppetlabs/code-staging/environments/production/"
+      - type: shell
+        inline: "yes | cp -r /vagrant/scripts /etc/puppetlabs/code-staging/environments/production/"
+      - type: shell
+        inline: "/bin/chown -R pe-puppet:pe-puppet /etc/puppetlabs/code-staging"
+      - type: shell
+        inline: "/vagrant/scripts/trigger-file-sync.sh && sleep 5"
+      - type: shell
+        inline: 'puppet agent -t || true'
+
+  puppet_agent:
+    provisioners:
+      - type: shell
+        inline: "echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+      - type: pe_agent
+        master_vm: 'puppet-master.puppetlabs.vm'
+      - type: shell
+        inline: 'puppet agent -t || echo "Waiting for the puppet run to finish, then restarting bitbucket to enable dev mode..."; while [[ -f /opt/puppetlabs/puppet/cache/state/agent_catalog_run.lock ]]; do sleep 5; echo -n "." ; done'
+
+  el-tools:
+    provisioners:
+      - type: shell
+        inline: '/usr/bin/yum install telnet vim tree git -y'
+
+  2_cpus:
+    providers:
+      - type: virtualbox
+        customize:
+          - [modifyvm, !ruby/sym id, '--cpus', 2]
+
+  tune-pe-memory:
+    provisioners:
+      - type: shell
+        inline: "mkdir -p /etc/puppetlabs/{code-staging,code}/environments/production/hieradata"
+      - type: shell
+        inline: "cp -v /vagrant/hieradata/common.yaml /etc/puppetlabs/code-staging/environments/production/hieradata"
+      - type: shell
+        inline: "cp -v /vagrant/hieradata/common.yaml /etc/puppetlabs/code/environments/production/hieradata/"
+      - type: shell
+        inline: "chmod 644 /etc/puppetlabs/code/environments/production/hieradata/common.yaml"
+
