@@ -20,7 +20,7 @@ class profile::grafana {
     grafana_url      => 'http://127.0.0.1:3000',
     grafana_user     => 'admin',
     grafana_password => 'admin',
-    content          => epp('profiles/jmx_dashboard.json.epp'),
+    content          => epp('profile/jmx_dashboard.json.epp'),
   }
 
 }
