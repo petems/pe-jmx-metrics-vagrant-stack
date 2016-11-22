@@ -49,9 +49,9 @@ class profile::metrics::jmx::puppet_master (
     $obj_name = $val[0]
     $obj_attr = $val[1]
     $memo + [{
-      object       => "metrics:name=petems.${facts['hostname']}.${obj_name}",
+      object       => "metrics:name=puppetlabs.${facts['hostname']}.${obj_name}",
       attributes   => $obj_attr,
-      result_alias => "petems.${obj_name}",
+      result_alias => "puppetlabs.${obj_name}",
     }]
   }
 
