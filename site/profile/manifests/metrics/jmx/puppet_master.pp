@@ -1,4 +1,4 @@
-# Class: profile::pe::master::metrics
+# Class: profile::metrics::jmx::puppet_master
 #
 # Configures metrics collection for puppet master services.
 #
